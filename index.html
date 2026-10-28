@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Этикетки для заготовок</title>
+<style>
+:root{
+  --bg:#f3f1ec; --surface:#ffffff; --ink:#1d2320; --muted:#68706b; --line:#d9d5cb; --accent:#1f6f5c; --accent-ink:#ffffff; --chip:#e8e5dc;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--bg:#161a18;--surface:#1f2522;--ink:#eceee9;--muted:#9aa29c;--line:#343c37;--accent:#5ec5a6;--accent-ink:#0d1f19;--chip:#2a312d}
+}
+:root[data-theme="dark"]{--bg:#161a18;--surface:#1f2522;--ink:#eceee9;--muted:#9aa29c;--line:#343c37;--accent:#5ec5a6;--accent-ink:#0d1f19;--chip:#2a312d}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Trebuchet MS","Segoe UI",system-ui,sans-serif}
+main{max-width:520px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:22px;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:0 0 18px;font-size:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+label.f{display:block;font-size:13px;color:var(--muted);margin:0 0 6px}
+input[type=text],input[type=date],input[type=number]{width:100%;font:inherit;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+input:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.row{display:flex;gap:10px}.row>div{flex:1;min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:999px;padding:8px 13px;font:inherit;font-size:14px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.gap{margin-top:14px}
+.preview{display:flex;flex-direction:column;align-items:center;gap:10px}
+.preview img{max-width:100%;height:auto;border:1px dashed var(--muted);background:#fff}
+.hint{font-size:13px;color:var(--muted);text-align:center;margin:0}
+.btn{display:block;width:100%;text-align:center;text-decoration:none;font:inherit;font-weight:700;padding:13px;border-radius:10px;border:0;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+ol{margin:6px 0 0;padding-left:20px;font-size:14px;color:var(--muted)}
+</style>
+</head>
+<body>
+<main>
+  <h1>Этикетки для заготовок</h1>
+  <p class="sub">Название, дата упаковки и вес. Сохрани картинку и печатай.</p>
+
+  <div class="card">
+    <label class="f" for="name">Что заготовили</label>
+    <input id="name" type="text" value="Капуста нарезанная" maxlength="40" autocomplete="off">
+
+    <div class="gap row">
+      <div><label class="f" for="date">Дата упаковки</label><input id="date" type="date"></div>
+      <div><label class="f" for="weight">Вес</label><input id="weight" type="text" value="500 г" maxlength="10" autocomplete="off"></div>
+    </div>
+
+    <div class="gap"><label class="f" for="exp">Годен до (необязательно)</label>
+      <input id="exp" type="date">
+      <div class="chips" id="quick" style="margin-top:8px"></div>
+    </div>
+
+    <div class="gap"><label class="f">Размер этикетки, мм</label>
+      <div class="chips" id="size">
+        <button class="chip" data-w="50" data-h="30" aria-pressed="true">50×30</button>
+        <button class="chip" data-w="40" data-h="30" aria-pressed="false">40×30</button>
+        <button class="chip" data-w="50" data-h="20" aria-pressed="false">50×20</button>
+        <button class="chip" data-w="30" data-h="20" aria-pressed="false">30×20</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card preview">
+    <img id="out" alt="Готовая этикетка">
+    <p class="hint" id="info"></p>
+    <a class="btn" id="dl" download="label.png" hidden>Скачать PNG</a>
+    <button class="btn" id="share" hidden>Сохранить / отправить картинку</button>
+    <p class="hint">На телефоне: нажми на картинку и удерживай → «Сохранить в Фото». На компьютере: правая кнопка → «Сохранить картинку как».</p>
+  </div>
+
+  <div class="card">
+    <strong>Как напечатать в Niimbot</strong>
+    <ol>
+      <li>Сохрани картинку в галерею.</li>
+      <li>В приложении создай этикетку нужного размера.</li>
+      <li>Добавь изображение из галереи и растяни на весь размер.</li>
+      <li>Печатай.</li>
+    </ol>
+  </div>
+</main>
+
+<script>
+(function(){
+  var MM = 8; // 203 dpi ≈ 8 точек на мм
+  var st = {w:50, h:30};
+  var $ = function(id){return document.getElementById(id)};
+
+  try{
+    var s = JSON.parse(localStorage.getItem('zag-label2')||'null');
+    if(s){ st.w=s.w||st.w; st.h=s.h||st.h; if(s.weight)$('weight').value=s.weight; }
+  }catch(e){}
+
+  function pad(n){return (n<10?'0':'')+n}
+  function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+  function fmt(d){return pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+String(d.getFullYear()).slice(2)}
+  function parse(v){var p=v.split('-');return new Date(+p[0],+p[1]-1,+p[2])}
+
+  $('date').value = iso(new Date());
+
+  [['без срока',''],['+7 дн.',7],['+30 дн.',30],['+90 дн.',90],['+180 дн.',180]].forEach(function(q){
+    var b=document.createElement('button');
+    b.className='chip'; b.textContent=q[0];
+    b.onclick=function(){
+      if(q[1]===''){$('exp').value='';}
+      else{var d=$('date').value?parse($('date').value):new Date();$('exp').value=iso(new Date(d.getFullYear(),d.getMonth(),d.getDate()+q[1]));}
+      draw();
+    };
+    $('quick').appendChild(b);
+  });
+
+  function syncUI(){
+    Array.prototype.forEach.call($('size').children,function(c){c.setAttribute('aria-pressed',(+c.dataset.w===st.w&&+c.dataset.h===st.h))});
+  }
+  syncUI();
+  $('size').onclick=function(e){
+    var b=e.target.closest('button'); if(!b)return;
+    st.w=+b.dataset.w; st.h=+b.dataset.h; syncUI(); draw();
+  };
+  ['name','date','exp','weight'].forEach(function(id){$(id).addEventListener('input',draw)});
+
+  var FONT='"Trebuchet MS","Segoe UI",Arial,sans-serif';
+
+  function wrap(ctx,text,maxW){
+    var words=text.split(/\s+/).filter(Boolean), lines=[], cur='';
+    words.forEach(function(w){
+      var t=cur?cur+' '+w:w;
+      if(ctx.measureText(t).width<=maxW||!cur){cur=t}else{lines.push(cur);cur=w}
+    });
+    if(cur)lines.push(cur);
+    return lines;
+  }
+
+  function draw(){
+    var W=st.w*MM, H=st.h*MM, P=Math.round(1.6*MM);
+    var c=document.createElement('canvas'); c.width=W; c.height=H;
+    var x=c.getContext('2d');
+    x.fillStyle='#fff'; x.fillRect(0,0,W,H);
+    x.fillStyle='#000'; x.textBaseline='alphabetic';
+
+    var name=($('name').value||'Заготовка').trim();
+    var weight=($('weight').value||'').trim();
+    var d0=$('date').value?parse($('date').value):new Date();
+    var d1=$('exp').value?parse($('exp').value):null;
+
+    var compact = H<=20*MM;
+    var botH = Math.round(H*(compact?0.46:0.34));
+    var expH = d1?Math.round(H*(compact?0.2:0.15)):0;
+
+    // нижняя строка: упаковано слева, вес справа
+    var by=H-botH;
+    x.fillRect(P,by,W-2*P,Math.max(2,Math.round(MM*0.3)));
+    var lab=Math.round(botH*0.26), dsz=Math.round(botH*0.44);
+    x.font='600 '+lab+'px '+FONT;
+    x.fillText('упаковано',P,by+lab+Math.round(botH*0.1));
+    x.font='800 '+dsz+'px '+FONT;
+    x.fillText(fmt(d0),P,H-P-Math.round(botH*0.04));
+    var dw=x.measureText(fmt(d0)).width;
+    if(weight){
+      var wmax=W-2*P-dw-P, wsz=Math.round(botH*0.7);
+      x.font='800 '+wsz+'px '+FONT;
+      while(x.measureText(weight).width>wmax && wsz>10){wsz-=2;x.font='800 '+wsz+'px '+FONT}
+      x.textAlign='right'; x.fillText(weight,W-P,H-P-Math.round(botH*0.06)); x.textAlign='left';
+    }
+
+    // название
+    var ny=P, nh=by-expH-ny-Math.round(P*0.5);
+    var maxLines=nh>=80?3:2, size, lines;
+    for(size=Math.min(nh,Math.round(H*0.42)); size>=12; size-=2){
+      x.font='800 '+size+'px '+FONT;
+      lines=wrap(x,name,W-2*P);
+      var ok=lines.length<=maxLines && lines.length*size*1.08<=nh &&
+             lines.every(function(l){return x.measureText(l).width<=W-2*P});
+      if(ok)break;
+    }
+    var th=lines.length*size*1.08;
+    var y=ny+(nh-th)/2+size*0.88;
+    lines.forEach(function(l,i){x.fillText(l,P,y+i*size*1.08)});
+
+    // срок годности (если указан)
+    if(d1){
+      var es=Math.round(expH*0.78);
+      x.font='700 '+es+'px '+FONT;
+      x.fillText('годен до '+fmt(d1),P,by-Math.round(P*0.45));
+    }
+
+    var url=c.toDataURL('image/png');
+    $('out').src=url;
+    $('out').width=Math.min(W,440);
+    $('info').textContent='Размер: '+st.w+'×'+st.h+' мм, '+W+'×'+H+' px.';
+    if(location.protocol==='file:'){ $('dl').hidden=false; $('dl').href=url; }
+    try{localStorage.setItem('zag-label2',JSON.stringify({w:st.w,h:st.h,weight:$('weight').value}))}catch(e){}
+    c.toBlob(function(b){window._blob=b});
+  }
+
+  if(navigator.share && navigator.canShare){
+    $('share').hidden=false;
+    $('share').onclick=function(){
+      try{
+        if(!window._blob)return;
+        var f=new File([window._blob],'label.png',{type:'image/png'});
+        if(navigator.canShare({files:[f]})) navigator.share({files:[f]}).catch(function(){});
+      }catch(e){}
+    };
+  }
+
+  draw();
+})();
+</script>
+</body>
+</html>
